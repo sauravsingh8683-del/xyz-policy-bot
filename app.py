@@ -1,38 +1,48 @@
 import streamlit as st
+import os
 from groq import Groq
 from retriever import load_index, search
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
-client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-
-st.set_page_config(page_title="XYZ Corp Policy Bot", page_icon="📄")
+st.set_page_config(page_title="XYZ Policy Assistant")
 st.title("📄 XYZ Corp - Policy Assistant")
-st.caption("Saare HR, WFH, Leave policies yahan pucho")
+st.write("Saare HR, WFH, Leave policies yahan pucho")
+
+# Groq client
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
+# Index load (agar nahi hai toh retriever khud bana lega)
+@st.cache_resource
+def get_data():
+    return load_index()
+
+data = get_data()
 
 query = st.text_input("Apna sawaal likho (Ex: WFH kitne din milta hai?)")
 
 if query:
-    data = load_index()
     results = search(query, data, top_k=3)
 
-    if results:
-        context = "\n\n".join(f"Source: {r['source']}\n{r['chunk']}" for r in results)
+    context = "\n\n".join([r[0] for r in results])
 
-        # LLM se jawab
-        completion = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[
-                {"role": "system", "content": "Tum XYZ Corp ke policy assistant ho. Context ka use karke short aur clear jawab do. Source ka naam bhi batao."},
-                {"role": "user", "content": f"Context:\n{context}\n\nSawaal: {query}"}
-            ]
-        )
-        st.success(completion.choices[0].message.content)
+    prompt = f"""
+    Tum XYZ Corp ke policy assistant ho. Neeche diye gaye policy documents ke basis par hi jawaab do.
+    Agar jawaab document me nahi hai to bolo 'Is baare me policy me jaankari nahi hai'.
 
-        st.divider()
-        st.subheader("Top Sources:")
-        for r in results:
-            st.code(f"{r['source']} | Score: {r['score']:.2f}\n{r['chunk'][:400]}...")
-    else:
-        st.warning("Isse related koi policy nahi mili.")
+    Context:
+    {context}
+
+    Sawaal: {query}
+    Jawaab Hindi/English mix me simple bhasha me do.
+    """
+
+    response = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[{"role": "user", "content": prompt}]
+    )
+
+    st.write(response.choices[0].message.content)
+
+    with st.expander("Source dekho"):
+        for chunk, src in results:
+            st.write(f"**{src}**")
+            st.write(chunk[:500])
