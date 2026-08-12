@@ -1,16 +1,13 @@
-import os, pickle
+import os
+import pickle
 
 def load_index():
     path = "index/store.pkl"
     if not os.path.exists(path):
-        # agar index nahi hai to abhi bana de
-        import ingest
-        # ingest ka main wala code function me nahi hai isliye seedha run karte hain
-        os.system("python ingest.py")
-
+        from ingest import build_index
+        return build_index()
     with open(path, "rb") as f:
-        data = pickle.load(f)
-    return data
+        return pickle.load(f)
 
 def search(query, data, top_k=3):
     from ingest import simple_tokenize
