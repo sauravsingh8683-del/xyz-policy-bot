@@ -1,5 +1,6 @@
 streamlit
 groq
+pdfplumber
+rank-bm25
 python-dotenv
-rank_bm25
-pypdf
+numpy
