@@ -45,7 +45,7 @@ if __name__ == "__main__":
     all_chunks = []
     all_sources = []
 
-    docs_folder = "Documents"
+    docs_folder = "Documents" if os.path.exists("Documents") and len([f for f in os.listdir("Documents") if f.endswith(".pdf")]) > 0 else "."
     for filename in os.listdir(docs_folder):
         if filename.endswith(".pdf"):
             filepath = os.path.join(docs_folder, filename)
