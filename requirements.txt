@@ -4,3 +4,5 @@ pdfplumber
 rank-bm25
 python-dotenv
 numpy
+fastapi
+uvicorn
